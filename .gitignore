@@ -1,1 +1,5 @@
+config.py
 stasiun.db
+data_cuaca.json
+__pycache__/
+static/img/
