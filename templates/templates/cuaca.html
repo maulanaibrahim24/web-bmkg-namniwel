@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>BMKG Kabupaten Buru</title>
+
+<!-- LEAFLET -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- RAINVIEWER -->
+<script src="https://unpkg.com/rainviewer-widget/dist/rainviewer-widget.min.js"></script>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+}
+
+header {
+  background: #004a8f;
+  color: white;
+  padding: 15px;
+}
+
+nav {
+  background: #eaeaea;
+  padding: 10px;
+}
+
+nav button {
+  padding: 8px 15px;
+  margin: 5px;
+  cursor: pointer;
+  border: none;
+  background: #005fa3;
+  color: white;
+}
+
+nav button:hover {
+  background: #003f73;
+}
+
+section {
+  padding: 10px;
+  background: #fff;
+}
+
+.konten {
+  display: none;
+  padding: 20px;
+}
+
+.konten.aktif {
+  display: block;
+}
+
+#map {
+  height: 500px;
+  margin-top: 10px;
+}
+
+select {
+  padding: 5px;
+  margin-right: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌦️ Sistem Informasi Cuaca & Maritim Kabupaten Buru</h1>
+</header>
+
+<nav>
+  <button onclick="showPage('profil')">Profil</button>
+  <button onclick="showPage('cuaca')">Cuaca</button>
+  <button onclick="showPage('gelombang')">Gelombang Laut</button>
+  <button onclick="showPage('gempa')">Gempa</button>
+  <button onclick="showPage('peta')">Radar Cuaca</button>
+</nav>
+
+<section>
+  <b>Kecamatan:</b>
+  <select id="kecamatan" onchange="ubahWilayah()"></select>
+
+  <b>Desa:</b>
+  <select id="desa"></select>
+</section>
+
+<!-- PROFIL -->
+<div id="profil" class="konten aktif">
+  <h2>Profil Wilayah</h2>
+  <p>
+    Kabupaten Buru adalah salah satu kabupaten di Provinsi Maluku.
+    Ibu kota berada di Namlea. Wilayah ini memiliki potensi cuaca
+    tropis, gelombang laut, dan aktivitas seismik.
+  </p>
+</div>
+
+<!-- CUACA -->
+<div id="cuaca" class="konten">
+  <h2>Prakiraan Cuaca Harian</h2>
+  <ul>
+    <li>Pagi: Cerah Berawan</li>
+    <li>Siang: Berawan</li>
+    <li>Sore: Hujan Lokal</li>
+    <li>Malam: Berawan</li>
+  </ul>
+</div>
+
+<!-- GELOMBANG -->
+<div id="gelombang" class="konten">
+  <h2>Gelombang Laut</h2>
+  <p>
+    Tinggi gelombang perairan sekitar Kabupaten Buru:
+  </p>
+  <ul>
+    <li>0.5 – 1.25 meter (rendah – sedang)</li>
+    <li>Arah dominan: Timur – Tenggara</li>
+  </ul>
+</div>
+
+<!-- GEMPA -->
+<div id="gempa" class="konten">
+  <h2>Gempa Terkini (BMKG)</h2>
+  <pre id="gempaData">Memuat data...</pre>
+</div>
+
+<!-- PETA -->
+<div id="peta" class="konten">
+  <h2>Radar Cuaca Live</h2>
+  <div id="map"></div>
+</div>
+
+<script>
+// ================= DATA WILAYAH BURU =================
+const buru = {
+  "Namlea": {lat:-3.2576, lon:126.7547, desa:["Namlea","Karang Jaya","Siahoni","Jamilu"]},
+  "Waeapo": {lat:-3.3000, lon:126.8500, desa:["Waenetat","Waelo","Wamlana"]},
+  "Air Buaya": {lat:-3.1210, lon:126.6320, desa:["Air Buaya","Wamsait"]},
+  "Lolong Guba": {lat:-3.3700, lon:126.7000, desa:["Lolong","Waeperang"]},
+  "Batabual": {lat:-3.5200, lon:126.4200, desa:["Batabual","Ilath"]},
+  "Lilialy": {lat:-3.1900, lon:126.7800, desa:["Sawa","Waekarta"]},
+  "Teluk Kaiely": {lat:-3.1500, lon:126.7200, desa:["Kaiely","Waeura"]}
+};
+
+// ================= DROPDOWN =================
+const kecSelect = document.getElementById("kecamatan");
+const desaSelect = document.getElementById("desa");
+
+Object.keys(buru).forEach(k=>{
+  kecSelect.innerHTML += `<option>${k}</option>`;
+});
+
+// ================= MAP =================
+let map = L.map("map").setView([-3.2576,126.7547],9);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+new RainViewerWidget({
+  container: document.getElementById("map"),
+  latitude: -3.2576,
+  longitude: 126.7547,
+  zoom: 9
+});
+
+// ================= FUNCTIONS =================
+function ubahWilayah(){
+  let k = kecSelect.value;
+  desaSelect.innerHTML = "";
+  buru[k].desa.forEach(d=>{
+    desaSelect.innerHTML += `<option>${d}</option>`;
+  });
+  map.setView([buru[k].lat, buru[k].lon], 10);
+}
+
+function showPage(id){
+  document.querySelectorAll(".konten").forEach(c=>c.classList.remove("aktif"));
+  document.getElementById(id).classList.add("aktif");
+
+  if(id==="gempa"){
+    fetch("https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json")
+      .then(r=>r.json())
+      .then(d=>{
+        let g = d.Infogempa.gempa;
+        document.getElementById("gempaData").textContent =
+          `Magnitudo : ${g.Magnitude} SR\n`+
+          `Wilayah   : ${g.Wilayah}\n`+
+          `Waktu     : ${g.Tanggal} ${g.Jam}`;
+      });
+  }
+}
+
+ubahWilayah();
+</script>
+
+</body>
+</html>
