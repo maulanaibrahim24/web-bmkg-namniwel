@@ -94,14 +94,10 @@ async function loadPegawai() {
         html += '</div>';
         el.innerHTML = html;
     } catch (e) {
-        console.error(e);
         el.innerHTML = "<p class='text-danger text-center'>Gagal memuat data pegawai. Pastikan server Flask berjalan.</p>";
     }
 }
 
-// ================== LOAD CUACA & BIKIN NARASI ==================
-// ================== LOAD CUACA & BIKIN NARASI OTOMATIS ==================
-// ================== LOAD CUACA & BIKIN NARASI OTOMATIS ==================
 function loadCuacaUtama() {
     const elHariIni = document.getElementById("cuacaHariIniContainer");
     const el7Hari = document.getElementById("cuaca7HariContainer");
@@ -116,6 +112,8 @@ function loadCuacaUtama() {
             let jenisHujan = "";
 
             for (const [nama, hariArray] of Object.entries(data)) {
+                if (!Object.prototype.hasOwnProperty.call(data, nama)) continue;
+                
                 const cuacaHariIni = hariArray[0].cuaca.toLowerCase();
                 if (cuacaHariIni.includes("petir") || cuacaHariIni.includes("kilat") || cuacaHariIni.includes("lebat") || cuacaHariIni.includes("sedang")) {
                     kecamatanEkstrem.push(`<strong>Kec. ${nama}</strong>`);
@@ -280,11 +278,10 @@ function loadCuacaUtama() {
                 if (document.getElementById("rh")) document.getElementById("rh").innerText = n.cuaca !== "-" ? `${n.rh} %` : "--";
             }
         })
-        .catch(e => {
-            console.error("Gagal memuat komponen narasi & kartu cuaca:", e);
-        });
+            .catch(e => {});
 }
 
+// GEMPA 
 // ================== GEMPA (Tampilan Alert & Urgensi) ==================
 function loadGempa() {
     fetch("https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json")
@@ -292,9 +289,16 @@ function loadGempa() {
         .then(d => {
             let g = d.Infogempa.gempa;
             
+            // Sanitasi data dari API BMKG agar aman dari XSS
+            const wilayahAman = bersihkanTeks(g.Wilayah);
+            const potensiAman = bersihkanTeks(g.Potensi);
+            const magAman = bersihkanTeks(g.Magnitude);
+            const tglAman = bersihkanTeks(g.Tanggal);
+            const jamAman = bersihkanTeks(g.Jam);
+
             // Update teks singkat di header/sidebar jika ada
             if (document.getElementById("gempaSingkat")) {
-                document.getElementById("gempaSingkat").innerText = `${g.Magnitude} SR | ${g.Wilayah}`;
+                document.getElementById("gempaSingkat").innerText = `${magAman} SR | ${wilayahAman}`;
             }
 
             if (document.getElementById("gempaData")) {
@@ -314,52 +318,48 @@ function loadGempa() {
                             <div class="col-md-6">
                                 <div class="p-4 rounded-4 h-100 border border-danger border-opacity-25" style="background-color: #fff5f5;">
                                     <small class="text-danger text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Magnitudo</small>
-                                    <div class="display-5 fw-800 text-danger mt-1">${g.Magnitude} <span class="fs-5 text-dark fw-normal">SR</span></div>
+                                    <div class="display-5 fw-800 text-danger mt-1">${magAman} <span class="fs-5 text-dark fw-normal">SR</span></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="p-4 bg-light rounded-4 h-100 border border-secondary border-opacity-10">
                                     <small class="text-muted text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Waktu Kejadian</small>
-                                    <div class="fs-5 fw-bold text-dark mt-2">${g.Tanggal}</div>
-                                    <div class="text-muted fw-semibold"><i class="bi bi-clock me-1"></i> ${g.Jam}</div>
+                                    <div class="fs-5 fw-bold text-dark mt-2">${tglAman}</div>
+                                    <div class="text-muted fw-semibold"><i class="bi bi-clock me-1"></i> ${jamAman}</div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="p-4 bg-light rounded-4 mb-3 border-start border-danger border-5 shadow-sm">
                             <small class="text-muted text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Lokasi / Wilayah</small>
-                            <div class="fs-5 fw-bold text-dark mt-2" style="line-height: 1.5;">${g.Wilayah}</div>
+                            <div class="fs-5 fw-bold text-dark mt-2" style="line-height: 1.5;">${wilayahAman}</div>
                         </div>
 
                         <div class="p-4 rounded-4 border border-danger border-opacity-25" style="background: #fff8f8;">
                             <small class="text-danger text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Status Potensi</small>
                             <div class="fs-6 text-dark mt-2 fw-bold italic">
-                                <i class="bi bi-info-circle-fill me-2 text-danger"></i>${g.Potensi}
+                                <i class="bi bi-info-circle-fill me-2 text-danger"></i>${potensiAman}
                             </div>
                         </div>
                     </div>
                 `;
             }
         })
-        .catch(e => console.log("Gagal memuat gempa", e));
+        .catch(e => {});
 }
-
-// ================== NAVIGASI SPA ==================
+// = NAVIGASI SPA 
 function showPage(id) {
-    // 1. Sembunyikan semua konten halaman
+
     document.querySelectorAll(".konten").forEach(c => c.classList.remove("aktif"));
-    
-    // 2. Tampilkan halaman yang diklik
+
     const target = document.getElementById(id);
     if (target) target.classList.add("aktif");
 
-    // 3. LOGIKA TOMBOL AKTIF:
-    // Hapus warna biru solid (class active) dari SEMUA tombol menu
     document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.classList.remove("active");
     });
 
-    // Cek tombol yang diklik berdasarkan ID
+
     let btnTarget = document.getElementById("btn-" + id);
     
     // PERBAIKAN: Jika yang diklik adalah submenu dropdown, aktifkan menu utama "Profil"
@@ -510,13 +510,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
 
                 const hariIni = window.dataCuacaGlobal[k.nama][0]; 
-                const tempDisplay = hariIni.suhu === "-" ? "--" : hariIni.suhu;
-                const rhDisplay = hariIni.rh === "-" ? "--" : hariIni.rh;
-                const anginDisplay = hariIni.angin === "-" ? "--" : hariIni.angin;
+                const tempDisplay = bersihkanTeks(hariIni.suhu === "-" ? "--" : hariIni.suhu);
+                const rhDisplay = bersihkanTeks(hariIni.rh === "-" ? "--" : hariIni.rh);
+                const anginDisplay = bersihkanTeks(hariIni.angin === "-" ? "--" : hariIni.angin);
+                const namaKecAman = bersihkanTeks(k.nama);
 
+                // 2. Gunakan namaKecAman pada bagian tooltip-header
                 let isiTooltip = `
                     <div class="tooltip-pro" style="min-width: 140px;">
-                        <div class="tooltip-header" style="font-weight:bold; color:#004a8f; font-size:14px;">Kec. ${k.nama}</div>
+                        <div class="tooltip-header" style="font-weight:bold; color:#004a8f; font-size:14px;">Kec. ${namaKecAman}</div>
                         <div class="tooltip-status" style="font-size:10px; background:#e1effe; color:#004a8f; padding:2px 6px; border-radius:8px; margin:5px 0; display:inline-block;">HARI INI</div>
                         <div class="tooltip-main" style="margin:8px 0;">
                             <span style="font-size:24px; vertical-align:middle;">🌤️</span>
@@ -532,9 +534,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 marker.setPopupContent(isiTooltip);
                 marker.openPopup();
             });
-
             marker.on("mouseout", function() {
-                // Diperpanjang ke 1200ms (1.2 detik) agar Anda punya waktu menyentuh popup saat peta bergerak
+
                 timerTutupPopup = setTimeout(() => {
                     marker.closePopup();
                 }, 1200); 
