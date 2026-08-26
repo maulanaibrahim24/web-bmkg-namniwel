@@ -9,6 +9,8 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+
+
 try:
 
     import config
