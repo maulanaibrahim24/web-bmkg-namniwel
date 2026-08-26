@@ -523,15 +523,16 @@
                 <div class="col-lg-3 col-md-6">
                     <h5 class="footer-title">Lokasi</h5>
                     <div class="rounded-3 overflow-hidden border border-secondary" style="height: 160px;">
-                        <iframe 
-                            src="https://maps.google.com/maps?q=Stasiun%20Meteorologi%20Namlea,%20Buru&t=&z=14&ie=UTF8&iwloc=&output=embed"
-                            width="100%" 
-                            height="250" 
-                            style="border:0; border-radius: 8px;" 
-                            allowfullscreen="" 
-                            loading="lazy" 
-                            referrerpolicy="no-referrer-when-downgrade">
-                        </iframe>
+            <iframe 
+                src="https://maps.google.com/maps?q=Stasiun%20Meteorologi%20Namlea,%20Buru&t=&z=14&ie=UTF8&iwloc=&output=embed"
+                width="100%" 
+                height="250" 
+                style="border:0; border-radius: 8px;" 
+                allowfullscreen="" 
+                loading="lazy" 
+                sandbox="allow-scripts allow-same-origin allow-popups"
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -555,9 +556,8 @@
                     </span>
                 </div>
                 <div class="footer-social mt-3 mt-md-0">
-                    <a href="https://www.facebook.com/share/14iEnsXzcNm/"><i class="bi bi-facebook"></i></a>
-                    <a href="https://www.instagram.com/meteonamlea?igsh=eWF5bWZ1cjBzdGJr"><i class="bi bi-instagram"></i></a>
-
+                    <a href="https://www.facebook.com/share/14iEnsXzcNm/" target="_blank" rel="noopener noreferrer"><i class="bi bi-facebook"></i></a>
+                    <a href="https://www.instagram.com/meteonamlea?igsh=eWF5bWZ1cjBzdGJr" target="_blank" rel="noopener noreferrer"><i class="bi bi-instagram"></i></a>
                 </div>
             </div>
         </div>
@@ -590,7 +590,7 @@
                             // Cari nama desa, kota, atau default ke Namlea
                             let namaWilayah = alamat.suburb || alamat.village || alamat.city_district || "Namlea";
                             
-                            teksLokasi.innerText = namaWilayah;
+                            teksLokasi.textContent = namaWilayah;
 
                         } catch (error) {
                             teksLokasi.innerText = "Namlea"; 
