@@ -9,12 +9,8 @@ from flask import Flask, render_template, request, jsonify, redirect, session, u
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-
-# ==========================================
-# SISTEM BRANKAS PASSWORD AMAN (TANPA .ENV)
-# ==========================================
 try:
-    # Membaca password asli dari file config.py di server
+
     import config
     app.secret_key = config.SECRET_KEY
     ADMIN_USERNAME = config.ADMIN_USERNAME
@@ -22,8 +18,7 @@ try:
     TESTER_USERNAME = config.TESTER_USERNAME
     TESTER_PASSWORD = config.TESTER_PASSWORD
 except ImportError:
-
-    app.secret_key = 'rahasia_default_palsu'
+    app.secret_key = os.urandom(32).hex()
     ADMIN_USERNAME = 'admin_palsu'
     ADMIN_PASSWORD = 'PasswordPalsu123!'
     TESTER_USERNAME = 'tester_palsu'
@@ -235,12 +230,13 @@ def hapus_konten(id):
     # 1. Cek file foto untuk dihapus dari folder static/img
     konten = db.execute("SELECT foto FROM konten WHERE id = ?", (id,)).fetchone()
     if konten and konten['foto']:
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], konten['foto'])
-        if os.path.exists(filepath):
-            try:
-                os.remove(filepath) # Menghapus file gambar fisik
-            except Exception as e:
-                print(f"Gagal menghapus file gambar {filepath}: {e}")
+            foto_aman = secure_filename(konten['foto'])
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], foto_aman)
+            if os.path.exists(filepath):
+                try:
+                    os.remove(filepath) # Menghapus file gambar fisik
+                except Exception:
+                    pass
             
     # 2. Hapus data dari database
     db.execute("DELETE FROM konten WHERE id = ?", (id,))
@@ -308,7 +304,7 @@ def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     
     # Melonggarkan CSP agar desain CSS (Bootstrap/Eksternal) dan Javascript bisa dimuat
-    response.headers['Content-Security-Policy'] = "default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data:;"
+    response.headers['Content-Security-Policy'] = "default-src 'self' https: data: 'unsafe-inline'; frame-ancestors 'self';"
     return response
 
 if __name__ == "__main__":
